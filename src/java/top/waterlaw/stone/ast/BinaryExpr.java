@@ -1,10 +1,11 @@
 package top.waterlaw.stone.ast;
 
+import top.waterlaw.stone.StoneObject;
 import top.waterlaw.stone.env.Environment;
 import top.waterlaw.stone.exception.StoneException;
 
 import java.util.List;
-
+import static top.waterlaw.stone.StoneObject.AccessException;
 import static top.waterlaw.stone.BasicEvaluator.FALSE;
 import static top.waterlaw.stone.BasicEvaluator.TRUE;
 
@@ -29,6 +30,14 @@ public class BinaryExpr extends ASTList {
     }
     protected Object computeAssign(Environment env, Object rvalue) {
         ASTree l = left();
+        if (l instanceof PrimaryExpr) {
+            PrimaryExpr p = (PrimaryExpr)l;
+            if (p.hasPostfix(0) && p.postfix(0) instanceof Dot) {
+                Object t = ((PrimaryExpr)l).evalSubExpr(env, 1);
+                if (t instanceof StoneObject)
+                    return setField((StoneObject)t, (Dot)p.postfix(0), rvalue);
+            }
+        }
         if (l instanceof Name) {
             env.put(((Name)l).name(), rvalue);
             return rvalue;
@@ -36,6 +45,17 @@ public class BinaryExpr extends ASTList {
         else
             throw new StoneException("bad assignment", this);
     }
+
+    protected Object setField(StoneObject obj, Dot expr, Object rvalue) {
+        String name = expr.name();
+        try {
+            obj.write(name, rvalue);
+            return rvalue;
+        } catch (AccessException e) {
+            throw new StoneException("bad member access " + location() + ": " + name);
+        }
+    }
+
     protected Object computeOp(Object left, String op, Object right) {
         if (left instanceof Integer && right instanceof Integer) {
             return computeNumber((Integer)left, op, (Integer)right);

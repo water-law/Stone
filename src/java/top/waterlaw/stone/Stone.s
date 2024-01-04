@@ -24,3 +24,15 @@ def fib (n) {
 t = currentTime()
 fib 15
 print currentTime() - t + " msec"
+
+class Position {
+   x = y = 0
+   def move (nx, ny) {
+      x = nx; y = ny
+   }
+}
+
+p = Position.new
+p.move(12, 13)
+print p.x
+print p.y
